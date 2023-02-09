@@ -1,7 +1,10 @@
 import torch
 import torch.nn as nn
 
-from inplace_abn import ABN
+try:
+    from inplace_abn import ABN
+except ImportError:
+    ABN = nn.Identity
 
 
 def calc_activation(ABN_layer):
@@ -65,7 +68,8 @@ def fuse_bn_sequential(block):
     if not isinstance(block, nn.Sequential) and not hasattr(block, 'bn'):
         return block
     stack = []
-    if isinstance(block, nn.Sequential) and len(block) == 1 and isinstance(block[0], nn.Sequential):  # 'downsample' layer in tresnet
+    if isinstance(block, nn.Sequential) and len(block) == 1 and isinstance(block[0],
+                                                                           nn.Sequential):  # 'downsample' layer in tresnet
         block = block[0]
     for m in block.children():
         if isinstance(m, nn.BatchNorm2d) or isinstance(m, ABN):

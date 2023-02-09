@@ -4,10 +4,16 @@ from urllib import request
 
 import torch
 
+from ..tresnet import tresnet_f
 from ...ml_decoder import ml_decoder_colo, ml_decoder
-from ..tresnet import tresnet_f, tresnet
+
+try:
+    from ..tresnet import tresnet
+except ImportError:
+    print('inplace_abn not install, only tresnet_f available.')
 
 logger = logging.getLogger(__name__)
+
 
 def create_model(args, load_head=False, colo=False):
     """Create a model
@@ -33,8 +39,9 @@ def create_model(args, load_head=False, colo=False):
 
     ####################################################################################
     if args.use_ml_decoder:
-        model = mld.add_ml_decoder_head(model,num_classes=args.num_classes,num_of_groups=args.num_of_groups,
-                                    decoder_embedding=args.decoder_embedding, zsl=args.zsl, use_xformers=args.xformers,
+        model = mld.add_ml_decoder_head(model, num_classes=args.num_classes, num_of_groups=args.num_of_groups,
+                                        decoder_embedding=args.decoder_embedding, zsl=args.zsl,
+                                        use_xformers=args.xformers,
                                         learn_query=args.learn_query if hasattr(args, 'learn_query') else False)
     ####################################################################################
     # loading pretrain model

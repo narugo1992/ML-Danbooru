@@ -1,6 +1,4 @@
-import os
 import argparse
-import time
 
 import torch
 import torch.nn.parallel
@@ -9,18 +7,25 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 
 from src_files.helper_functions.bn_fusion import fuse_bn_recursively
-from src_files.models.tresnet.tresnet import InplacABN_to_ABN
 from src_files.models import create_model
+
+use_abn = True
+try:
+    from src_files.models.tresnet.tresnet import InplacABN_to_ABN
+except:
+    use_abn = False
 
 import json
 from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
-def make_args():
+
+def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='PyTorch MS_COCO validation')
     parser.add_argument('--data', type=str, default='')
     parser.add_argument('--ckpt', type=str, default='')
@@ -44,8 +49,7 @@ def make_args():
     parser.add_argument('--frelu', type=str2bool, default=True)
     parser.add_argument('--xformers', type=str2bool, default=False)
 
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def crop_fix(img: Image):
@@ -103,7 +107,8 @@ class Demo:
         model.eval()
         ########### eliminate BN for faster inference ###########
         model = model.cpu()
-        model = InplacABN_to_ABN(model)
+        if use_abn:
+            model = InplacABN_to_ABN(model)
         model = fuse_bn_recursively(model)
         self.model = model.to(device).eval()
         if args.fp16:
@@ -140,7 +145,10 @@ class Demo:
         if self.args.fp16:
             img = img.half()
         img = img.unsqueeze(0)
-        output = torch.sigmoid(self.model(img)).cpu().view(-1)
+        print('Model Input Shape:', img.shape)
+        native_output = self.model(img)
+        print('Model Output Shape:', native_output.shape)
+        output = torch.sigmoid(native_output).cpu().view(-1)
         pred = torch.where(output > self.args.thr)[0].numpy()
 
         cls_list = [(self.class_map[str(i)], output[i]) for i in pred]
@@ -148,7 +156,8 @@ class Demo:
 
 
 if __name__ == '__main__':
-    args = make_args()
+    parser = make_parser()
+    args = parser.parse_args()
     demo = Demo(args)
     cls_list = demo.infer(args.data)
 

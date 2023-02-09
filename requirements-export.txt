@@ -1,0 +1,5 @@
+huggingface_hub
+onnx
+onnxoptimizer
+onnxsim
+onnxruntime
