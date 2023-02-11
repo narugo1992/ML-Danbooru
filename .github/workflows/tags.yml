@@ -1,7 +1,7 @@
 name: Tags Analysis
 
 on:
-  push:
+  #  push:
   workflow_dispatch:
   schedule:
     - cron: '0 17 * * *'
