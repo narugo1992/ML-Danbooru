@@ -1,12 +1,14 @@
-name: Onnx Model Export
+name: Tags Analysis
 
 on:
   push:
   workflow_dispatch:
+  schedule:
+    - cron: '0 17 * * *'
 
 jobs:
-  onnx_export:
-    name: Onnx Export
+  tag_analysis:
+    name: Tags Analysis
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,11 +17,6 @@ jobs:
           - 'ubuntu-20.04'
         python-version:
           - '3.8'
-        ckpt-name:
-          - 'TResnet-D-FLq_ema_2-40000.ckpt'
-          - 'TResnet-D-FLq_ema_4-10000.ckpt'
-          - 'TResnet-D-FLq_ema_6-10000.ckpt'
-          - 'TResnet-D-FLq_ema_6-30000.ckpt'
 
     steps:
       - name: Checkout code
@@ -37,12 +34,13 @@ jobs:
           pip install -r requirements-build.txt
           pip install -r requirements.txt
           pip install -r requirements-export.txt
-      - name: Transform models to onnx format
+          pip install -r requirements-tags.txt
+          python -m spacy download en_core_web_trf
+      - name: Get Meta Information of Tags
         env:
           DIST_DIR: dist
-          CKPT_NAME: ${{ matrix.ckpt-name }}
         run: |
-          make export
+          make tags
           ls -al dist
       - name: Upload the character databases
         uses: actions/upload-artifact@v3
@@ -54,7 +52,7 @@ jobs:
     name: Data Upload
     runs-on: ${{ matrix.os }}
     needs:
-      - onnx_export
+      - tag_analysis
     strategy:
       fail-fast: false
       matrix:

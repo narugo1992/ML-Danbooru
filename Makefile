@@ -19,5 +19,8 @@ export:
   	  --data "${IMAGE_FILE}" \
   	  --onnx_file "${ONNX_FILE}"
 
+tags:
+	$(PYTHON) tags.py
+
 clean:
-	rm -rf "${DIST_DIR}"
+	rm -rf "${DIST_DIR}/*"
