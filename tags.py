@@ -33,7 +33,7 @@ def _get_danbooru_posts_count(tag: str) -> int:
 
 
 if __name__ == '__main__':
-    df = pd.DataFrame({'tag': load_classes_from_local()[:10]})
+    df = pd.DataFrame({'tag': load_classes_from_local()})
 
     items = []
     counts = []
