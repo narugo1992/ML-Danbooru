@@ -24,6 +24,10 @@ def export_to_onnx(model, onnx_filename, opset_version: int = 14, verbose: bool 
     if half:
         example_input = example_input.half()
 
+    if torch.cuda.is_available():
+        example_input = example_input.cuda()
+        model = model.cuda()
+
     with torch.no_grad(), tempfile.TemporaryDirectory() as td:
         onnx_model_file = os.path.join(td, 'model.onnx')
         torch.onnx.export(
