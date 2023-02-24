@@ -18,8 +18,11 @@ def make_parser():
     return parser
 
 
-def export_to_onnx(model, onnx_filename, opset_version: int = 14, verbose: bool = True, no_optimize: bool = False):
+def export_to_onnx(model, onnx_filename, opset_version: int = 14, verbose: bool = True, no_optimize: bool = False,
+                   half: bool = False):
     example_input = torch.randn((1, 3, 512, 768))
+    if half:
+        example_input = example_input.half()
 
     with torch.no_grad(), tempfile.TemporaryDirectory() as td:
         onnx_model_file = os.path.join(td, 'model.onnx')
@@ -60,4 +63,4 @@ if __name__ == '__main__':
     demo = Demo(args)
     print(demo.model)
 
-    export_to_onnx(demo.model, args.onnx_file)
+    export_to_onnx(demo.model, args.onnx_file, half=args.fp16)
