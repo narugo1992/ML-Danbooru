@@ -1,10 +1,12 @@
 import argparse
+import os
 
 import torch
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
+from tqdm.auto import tqdm
 
 from src_files.helper_functions.bn_fusion import fuse_bn_recursively
 from src_files.models import create_model
@@ -19,6 +21,7 @@ import json
 from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".bmp"]
 
 
 def str2bool(v):
@@ -40,7 +43,7 @@ def make_parser() -> argparse.ArgumentParser:
 
     # ML-Decoder
     parser.add_argument('--use_ml_decoder', default=1, type=int)
-    parser.add_argument('--num_of_groups', default=20, type=int)  # full-decoding
+    parser.add_argument('--num_of_groups', default=32, type=int)  # full-decoding
     parser.add_argument('--decoder_embedding', default=1024, type=int)
     parser.add_argument('--zsl', default=0, type=int)
     parser.add_argument('--fp16', action="store_true", default=False)
@@ -48,6 +51,8 @@ def make_parser() -> argparse.ArgumentParser:
 
     parser.add_argument('--frelu', type=str2bool, default=True)
     parser.add_argument('--xformers', type=str2bool, default=False)
+
+    parser.add_argument('--out_type', type=str, default='txt')
 
     return parser
 
@@ -139,9 +144,7 @@ class Demo:
         img = self.trans(img)
         return img
 
-    @torch.no_grad()
-    def infer(self, path):
-        img = self.load_data(path).to(device)
+    def infer_one(self, img):
         if self.args.fp16:
             img = img.half()
         img = img.unsqueeze(0)
@@ -154,6 +157,31 @@ class Demo:
         cls_list = [(self.class_map[str(i)], output[i]) for i in pred]
         return cls_list
 
+    @torch.no_grad()
+    def infer(self, path):
+        if os.path.isfile(path):
+            img = self.load_data(path).to(device)
+            cls_list = self.infer_one(img)
+            return cls_list
+        else:
+            tag_dict = {}
+            img_list = [os.path.join(path, x) for x in os.listdir(path) if x[x.rfind('.'):].lower() in IMAGE_EXTENSIONS]
+            for item in tqdm(img_list):
+                img = self.load_data(item).to(device)
+                cls_list = self.infer_one(img)
+                cls_list.sort(reverse=True, key=lambda x: x[1])
+                if self.args.out_type == 'txt':
+                    with open(item[:item.rfind('.')] + '.txt', 'w', encoding='utf8') as f:
+                        f.write(', '.join([name.replace('_', ' ') for name, prob in cls_list]))
+                elif self.args.out_type == 'json':
+                    tag_dict[os.path.basename(item)] = ', '.join([name.replace('_', ' ') for name, prob in cls_list])
+
+            if self.args.out_type == 'json':
+                with open(os.path.join(path, 'image_captions.json'), 'w', encoding='utf8') as f:
+                    f.write(json.dumps(tag_dict))
+
+            return None
+
 
 if __name__ == '__main__':
     parser = make_parser()
@@ -161,6 +189,7 @@ if __name__ == '__main__':
     demo = Demo(args)
     cls_list = demo.infer(args.data)
 
-    cls_list.sort(reverse=True, key=lambda x: x[1])
-    print(', '.join([f'{name}:{prob:.3}' for name, prob in cls_list]))
-    print(', '.join([name for name, prob in cls_list]))
+    if cls_list is not None:
+        cls_list.sort(reverse=True, key=lambda x: x[1])
+        print(', '.join([f'{name}:{prob:.3}' for name, prob in cls_list]))
+        print(', '.join([name for name, prob in cls_list]))
