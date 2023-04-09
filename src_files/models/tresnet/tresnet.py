@@ -1,13 +1,17 @@
+from collections import OrderedDict
+
 import torch
 import torch.nn as nn
 from torch.nn import Module as Module
-from collections import OrderedDict
 
 from .layers.anti_aliasing import AntiAliasDownsampleLayer
 from .layers.avg_pool import FastAvgPool2d
 from .layers.general_layers import SEModule, SpaceToDepthModule
 
-from inplace_abn import InPlaceABN, ABN
+try:
+    from inplace_abn import InPlaceABN, ABN
+except (ImportError, ModuleNotFoundError):
+    ABN = nn.Identity
 
 
 def InplacABN_to_ABN(module: nn.Module) -> nn.Module:
@@ -25,6 +29,7 @@ def InplacABN_to_ABN(module: nn.Module) -> nn.Module:
         if new_child != child:
             module._modules[name] = new_child
     return module
+
 
 def conv2d(ni, nf, stride):
     return nn.Sequential(
@@ -216,6 +221,7 @@ def TResnetS(model_params):
     model = TResNet(layers=[3, 4, 6, 3], num_classes=num_classes, in_chans=in_chans)
     return model
 
+
 def TResnetM(model_params):
     """Constructs a medium TResnet model.
     """
@@ -223,6 +229,7 @@ def TResnetM(model_params):
     num_classes = model_params['num_classes']
     model = TResNet(layers=[3, 4, 11, 3], num_classes=num_classes, in_chans=in_chans)
     return model
+
 
 def TResnetD(model_params):
     """Constructs a large TResnet model.
@@ -233,6 +240,7 @@ def TResnetD(model_params):
     model = TResNet(layers=layers_list, num_classes=num_classes, in_chans=in_chans, first_two_layers=Bottleneck)
     return model
 
+
 def TResnetL(model_params):
     """Constructs a large TResnet model.
     """
@@ -240,8 +248,9 @@ def TResnetL(model_params):
     num_classes = model_params['num_classes']
     layers_list = [3, 4, 23, 3]
     model = TResNet(layers=layers_list, num_classes=num_classes, in_chans=in_chans, first_two_layers=Bottleneck)
-    #model = InplacABN_to_ABN(model)
+    # model = InplacABN_to_ABN(model)
     return model
+
 
 def TResnetXL(model_params):
     """Constructs a large TResnet model.

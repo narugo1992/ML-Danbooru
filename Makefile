@@ -1,4 +1,4 @@
-.PHONY: export
+.PHONY: export export_ca
 
 PYTHON     ?= $(shell which python)
 
@@ -15,6 +15,15 @@ export:
 	  --num_of_groups 32 \
 	  --ckpt_online ${CKPT_NAME} \
 	  --image_size 512 --keep_ratio yes \
+	  $(if ${HALF},--fp16,) \
+  	  --data "${IMAGE_FILE}" \
+  	  --onnx_file "${ONNX_FILE}"
+
+export_ca:
+	$(PYTHON) export_ca.py \
+	  --model_name caformer_m36 \
+	  --ckpt_online ${CKPT_NAME} \
+	  --image_size 448 \
 	  $(if ${HALF},--fp16,) \
   	  --data "${IMAGE_FILE}" \
   	  --onnx_file "${ONNX_FILE}"

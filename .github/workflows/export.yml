@@ -16,10 +16,11 @@ jobs:
         python-version:
           - '3.8'
         ckpt-name:
-          - 'TResnet-D-FLq_ema_2-40000.ckpt'
-          - 'TResnet-D-FLq_ema_4-10000.ckpt'
-          - 'TResnet-D-FLq_ema_6-10000.ckpt'
-          - 'TResnet-D-FLq_ema_6-30000.ckpt'
+          #          - 'TResnet-D-FLq_ema_2-40000.ckpt'
+          #          - 'TResnet-D-FLq_ema_4-10000.ckpt'
+          #          - 'TResnet-D-FLq_ema_6-10000.ckpt'
+          #          - 'TResnet-D-FLq_ema_6-30000.ckpt'
+          - 'caformer_m36-3-80000.ckpt'
 
     steps:
       - name: Checkout code
@@ -42,7 +43,7 @@ jobs:
           DIST_DIR: dist
           CKPT_NAME: ${{ matrix.ckpt-name }}
         run: |
-          make export
+          make export_ca
           ls -al dist
       - name: Upload the character databases
         uses: actions/upload-artifact@v3

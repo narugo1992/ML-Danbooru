@@ -24,7 +24,7 @@ def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
 
-def make_args():
+def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='ML-Danbooru Demo')
     parser.add_argument('--data', type=str, default='')
     parser.add_argument('--ckpt', type=str, default='')
@@ -52,8 +52,7 @@ def make_args():
     parser.add_argument('--num_queries', default=80, type=int)
     parser.add_argument('--scale_skip', default=1, type=int)
 
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 class Demo:
@@ -137,7 +136,8 @@ class Demo:
 
 # python demo_ca.py --data imgs/t1.jpg --model_name caformer_m36 --ckpt ckpt/caformer_m36-2-20000.ckpt --thr 0.7 --image_size 448
 if __name__ == '__main__':
-    args = make_args()
+    parser = make_parser()
+    args = parser.parse_args()
     demo = Demo(args)
     cls_list = demo.infer(args.data)
 
