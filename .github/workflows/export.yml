@@ -20,7 +20,8 @@ jobs:
           #          - 'TResnet-D-FLq_ema_4-10000.ckpt'
           #          - 'TResnet-D-FLq_ema_6-10000.ckpt'
           #          - 'TResnet-D-FLq_ema_6-30000.ckpt'
-          - 'caformer_m36-3-80000.ckpt'
+          - 'ml_caformer_m36_dec-3-80000.ckpt'
+          - 'ml_caformer_m36_dec-5-97527.ckpt'
 
     steps:
       - name: Checkout code
